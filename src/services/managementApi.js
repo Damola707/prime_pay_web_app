@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const MANAGEMENT_API_URL = 'https://mflix-movies.onrender.com';
+const MANAGEMENT_API_URL = import.meta.env.VITE_API_BASE_URL || 'https://mflix-movies.onrender.com';
 
 // GET all movies
 export const fetchMovies = async () => {
@@ -38,7 +38,7 @@ export const createMovie = async (movieData) => {
 // UPDATE movie
 export const updateMovie = async (id, movieData) => {
   try {
-    const response = await axios.put(`${MANAGEMENT_API_URL}/movies/${id}`, movieData);
+    const response = await axios.patch(`${MANAGEMENT_API_URL}/movies/${id}`, movieData);
     return response.data;
   } catch (error) {
     console.error('Error updating movie:', error);
