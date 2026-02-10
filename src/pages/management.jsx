@@ -117,7 +117,8 @@ export default function Management() {
       await dispatch(addMovie(movieData)).unwrap();
       setIsAddDialogOpen(false);
     } catch (error) {
-      alert(`Failed to add movie: ${error.message}`);
+      console.error('Failed to add movie:', error);
+      alert(`Failed to add movie: ${error.message || 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -135,7 +136,8 @@ export default function Management() {
       setIsEditDialogOpen(false);
       setEditingMovie(null);
     } catch (error) {
-      alert(`Failed to update movie: ${error.message}`);
+      console.error('Failed to update movie:', error);
+      alert(`Failed to update movie: ${error.message || 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -146,7 +148,8 @@ export default function Management() {
     try {
       await dispatch(removeMovie(movieId)).unwrap();
     } catch (error) {
-      alert(`Failed to delete movie: ${error.message}`);
+      console.error('Failed to delete movie:', error);
+      alert(`Failed to delete movie: ${error.message || 'Unknown error'}`);
     } finally {
       setIsDeleting(false);
     }
@@ -160,7 +163,8 @@ export default function Management() {
       }
       dispatch(clearMovieSelection());
     } catch (error) {
-      alert(`Failed to delete some movies: ${error.message}`);
+      console.error('Failed to delete some movies:', error);
+      alert(`Failed to delete some movies: ${error.message || 'Unknown error'}`);
     } finally {
       setIsDeleting(false);
     }
@@ -361,6 +365,7 @@ export default function Management() {
           key="add-movie"
           open={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
+          movie={null}
           onSubmit={handleAddMovie}
           isSubmitting={isSubmitting}
           title="Add New Movie"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function MovieDialog({
@@ -34,6 +34,33 @@ export function MovieDialog({
     };
   });
 
+  // Sync form data when movie changes
+  useEffect(() => {
+    if (movie) {
+      setFormData({
+        title: movie.title || '',
+        plot: movie.plot || '',
+        year: movie.year || '',
+        runtime: movie.runtime || '',
+        genres: movie.genres?.join(', ') || '',
+        directors: movie.directors?.join(', ') || '',
+        cast: movie.cast?.join(', ') || '',
+        rating: movie.imdb?.rating || '',
+      });
+    } else {
+      setFormData({
+        title: '',
+        year: '',
+        rating: '',
+        plot: '',
+        genres: '',
+        directors: '',
+        cast: '',
+        runtime: ''
+      });
+    }
+  }, [movie, open]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title?.trim()) {
@@ -63,10 +90,10 @@ export function MovieDialog({
       },
       imdb: {
         rating: parseFloat(formData.rating) || 0,
-        votes: 0, // Required by API
-        id: 0 // Required by API
+        votes: 0,
+        id: 0
       },
-      tomatoes: { // Required by API
+      tomatoes: {
         viewer: {
           rating: 0,
           numReviews: 0,
@@ -84,20 +111,6 @@ export function MovieDialog({
     };
 
     onSubmit(movieData);
-
-    // Clear form for add mode only
-    if (!movie) {
-      setFormData({
-        title: '',
-        year: '',
-        rating: '',
-        plot: '',
-        genres: '',
-        directors: '',
-        cast: '',
-        runtime: ''
-      });
-    }
   };
 
   const handleCancel = () => {

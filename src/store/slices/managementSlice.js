@@ -8,11 +8,13 @@ export const loadMovies = createAsyncThunk('management/loadMovies', async () => 
 });
 
 export const addMovie = createAsyncThunk('management/addMovie', async (movieData) => {
-  return await createMovie(movieData);
+  const result = await createMovie(movieData);
+  return result;
 });
 
 export const editMovie = createAsyncThunk('management/editMovie', async ({ id, data }) => {
-  return await updateMovie(id, data);
+  const result = await updateMovie(id, data);
+  return result;
 });
 
 export const removeMovie = createAsyncThunk('management/removeMovie', async (id) => {
@@ -53,10 +55,9 @@ const managementSlice = createSlice({
     builder
       .addCase(loadMovies.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(loadMovies.fulfilled, (state, action) => {
-        // Normalize API response to an array of movies.
-        // Many APIs return { movies: [...] } or { data: [...] } or an array directly.
         const payload = action.payload;
         if (Array.isArray(payload)) {
           state.movies = payload;
@@ -65,23 +66,71 @@ const managementSlice = createSlice({
         } else if (payload?.data && Array.isArray(payload.data)) {
           state.movies = payload.data;
         } else {
-          state.movies = []; // fallback
+          state.movies = [];
         }
         state.loading = false;
+        state.error = null;
       })
       .addCase(loadMovies.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })
+      // ADD MOVIE
+      .addCase(addMovie.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(addMovie.fulfilled, (state, action) => {
-        state.movies.push(action.payload);
+        // Handle different response formats
+        const newMovie = action.payload?.data || action.payload;
+        
+        // Optimistically add movie to state immediately
+        if (newMovie && newMovie._id) {
+          state.movies.unshift(newMovie);
+        }
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(addMovie.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      // EDIT MOVIE
+      .addCase(editMovie.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
       .addCase(editMovie.fulfilled, (state, action) => {
-        const index = state.movies.findIndex((m) => m._id === action.payload._id);
-        if (index !== -1) state.movies[index] = action.payload;
+        // Handle different response formats from API
+        const updatedMovie = action.payload?.data || action.payload;
+        
+        // Update movie in state immediately
+        const index = state.movies.findIndex((m) => m._id === updatedMovie._id);
+        if (index !== -1) {
+          // Replace the entire movie object with the updated one
+          state.movies[index] = updatedMovie;
+        }
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(editMovie.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      // REMOVE MOVIE
+      .addCase(removeMovie.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
       .addCase(removeMovie.fulfilled, (state, action) => {
+        // Remove movie from state immediately
         state.movies = state.movies.filter((m) => m._id !== action.payload);
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(removeMovie.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
       });
   },
 });
