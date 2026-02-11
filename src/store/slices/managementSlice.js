@@ -7,19 +7,31 @@ export const loadMovies = createAsyncThunk('management/loadMovies', async () => 
   return await fetchMovies();
 });
 
-export const addMovie = createAsyncThunk('management/addMovie', async (movieData) => {
-  const result = await createMovie(movieData);
-  return result;
+export const addMovie = createAsyncThunk('management/addMovie', async (movieData, { rejectWithValue }) => {
+  try {
+    const result = await createMovie(movieData);
+    return result;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || error.message);
+  }
 });
 
-export const editMovie = createAsyncThunk('management/editMovie', async ({ id, data }) => {
-  const result = await updateMovie(id, data);
-  return result;
+export const editMovie = createAsyncThunk('management/editMovie', async ({ id, data }, { rejectWithValue }) => {
+  try {
+    const result = await updateMovie(id, data);
+    return result;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || error.message);
+  }
 });
 
-export const removeMovie = createAsyncThunk('management/removeMovie', async (id) => {
-  await deleteMovie(id);
-  return id;
+export const removeMovie = createAsyncThunk('management/removeMovie', async (id, { rejectWithValue }) => {
+  try {
+    await deleteMovie(id);
+    return id;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || error.message);
+  }
 });
 
 const managementSlice = createSlice({
@@ -53,21 +65,25 @@ const managementSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // LOAD MOVIES
       .addCase(loadMovies.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(loadMovies.fulfilled, (state, action) => {
         const payload = action.payload;
+        
+        // Handle different response formats
         if (Array.isArray(payload)) {
           state.movies = payload;
-        } else if (payload?.movies && Array.isArray(payload.movies)) {
-          state.movies = payload.movies;
         } else if (payload?.data && Array.isArray(payload.data)) {
           state.movies = payload.data;
+        } else if (payload?.movies && Array.isArray(payload.movies)) {
+          state.movies = payload.movies;
         } else {
           state.movies = [];
         }
+        
         state.loading = false;
         state.error = null;
       })
@@ -77,60 +93,50 @@ const managementSlice = createSlice({
       })
       // ADD MOVIE
       .addCase(addMovie.pending, (state) => {
-        state.loading = true;
         state.error = null;
       })
       .addCase(addMovie.fulfilled, (state, action) => {
-        // Handle different response formats
-        const newMovie = action.payload?.data || action.payload;
+        const payload = action.payload;
+        const newMovie = payload?.data || payload;
         
-        // Optimistically add movie to state immediately
         if (newMovie && newMovie._id) {
-          state.movies.unshift(newMovie);
+          const exists = state.movies.some(m => m._id === newMovie._id);
+          if (!exists) {
+            state.movies.unshift(newMovie);
+          }
         }
-        state.loading = false;
         state.error = null;
       })
       .addCase(addMovie.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       // EDIT MOVIE
       .addCase(editMovie.pending, (state) => {
-        state.loading = true;
         state.error = null;
       })
       .addCase(editMovie.fulfilled, (state, action) => {
-        // Handle different response formats from API
-        const updatedMovie = action.payload?.data || action.payload;
+        const payload = action.payload;
+        const updatedMovie = payload?.data || payload;
         
-        // Update movie in state immediately
         const index = state.movies.findIndex((m) => m._id === updatedMovie._id);
         if (index !== -1) {
-          // Replace the entire movie object with the updated one
           state.movies[index] = updatedMovie;
         }
-        state.loading = false;
         state.error = null;
       })
       .addCase(editMovie.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       })
       // REMOVE MOVIE
       .addCase(removeMovie.pending, (state) => {
-        state.loading = true;
         state.error = null;
       })
       .addCase(removeMovie.fulfilled, (state, action) => {
-        // Remove movie from state immediately
         state.movies = state.movies.filter((m) => m._id !== action.payload);
-        state.loading = false;
         state.error = null;
       })
       .addCase(removeMovie.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
+        state.error = action.payload || action.error.message;
       });
   },
 });
